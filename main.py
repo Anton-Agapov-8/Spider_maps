@@ -4,10 +4,11 @@ import sqlite3
 from io import BytesIO
 
 import requests
-from PIL import Image, ImageDraw
+
 from flask import Flask, render_template, redirect, url_for
 
 app = Flask(__name__)
+app.config['SECRET_KEY'] = 'bober'
 x = '39.488892379812896'
 y = '52.52593551259488'
 delta = "2"
@@ -20,7 +21,7 @@ def coords_to_str(coords):
     return ','.join(map(lambda x: ','.join(map(str, x)), coords))
 
 
-@app.route('/')
+@app.route('/', methods=['POST', 'GET'])
 def main():
     global x, y, delta, view_type
     points_coords = [(39, 53), (40, 55), (38, 53), (37, 54), (35, 54.5)]
@@ -35,6 +36,7 @@ def main():
         "l": view_type,
         "pl": f"c:{point_color},f:{point_color2},w:{w_line},{points_coords_str}"
     }
+    map_api_server = "http://static-maps.yandex.ru/1.x/"
     return render_template("main.html",
                            image=f'http://static-maps.yandex.ru/1.x/?ll={map_params["ll"]}&spn={map_params["spn"]}&size={map_params["size"]}&l={map_params["l"]}&pl={map_params["pl"]}')
 

@@ -26,7 +26,12 @@
     </div>
     <div align="center">
         <a href="/ll_left" class="btn btn-warning"></a>
-        <img src={{image}}>
+        <button id="button"><img src={{image}}></button>
+        <script>
+          button.onclick = function(event) {
+              alert(event.clientX+'; '+event.clientY);
+          };
+        </script>
         <a href="/ll_right" class="btn btn-warning"></a>
     </div>
     <div align="center">
