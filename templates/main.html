@@ -29,7 +29,8 @@
         <button id="button"><img src={{image}}></button>
         <script>
           button.onclick = function(event) {
-              alert(event.clientX+'; '+event.clientY);
+            a = (event.clientX+'; '+event.clientY);
+            location.href = "/mouse_coords/"+a;
           };
         </script>
         <a href="/ll_right" class="btn btn-warning"></a>

@@ -77,6 +77,12 @@ def indexu():
     return redirect('/')
 
 
+@app.route('/mouse_coords/<coords>')
+def indexmouse(coords):
+    print(coords)
+    return redirect('/')
+
+
 def except_hook(cls, exception, traceback):
     sys.__excepthook__(cls, exception, traceback)
 
