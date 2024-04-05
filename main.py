@@ -1,18 +1,18 @@
 import sys
 
-import sqlite3
-from io import BytesIO
-
-import requests
-
+from numpy import cos, arccos, deg2rad, rad2deg, pi, sin, tan, arcsin
 from flask import Flask, render_template, redirect, url_for
+from data import db_session
+from data.Spiders import Spiders
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'bober'
 x = '39.488892379812896'
 y = '52.52593551259488'
-delta = "2"
+delta = "0.02"
 view_type = "map"
+# points = [['39.488892379812896', '52.52593551259488', 'round']]
+points = []
 
 
 def coords_to_str(coords):
@@ -32,13 +32,14 @@ def main():
     map_params = {
         "ll": ",".join([str(x), str(y)]),
         "spn": ",".join([str(delta), str(delta)]),
-        "size": "650,450",
+        "size": "450,450",
         "l": view_type,
-        "pl": f"c:{point_color},f:{point_color2},w:{w_line},{points_coords_str}"
+        "pl": f"c:{point_color},f:{point_color2},w:{w_line},{points_coords_str}",
+        'pt': '~'.join(map(lambda x: ','.join(map(str, x)), points))
     }
     map_api_server = "http://static-maps.yandex.ru/1.x/"
     return render_template("main.html",
-                           image=f'http://static-maps.yandex.ru/1.x/?ll={map_params["ll"]}&spn={map_params["spn"]}&size={map_params["size"]}&l={map_params["l"]}&pl={map_params["pl"]}')
+                           image=f'http://static-maps.yandex.ru/1.x/?ll={map_params["ll"]}&spn={map_params["spn"]}&size={map_params["size"]}&l={map_params["l"]}&pl={map_params["pl"]}&pt={map_params["pt"]}')
 
 
 @app.route('/ll_right')
@@ -77,9 +78,31 @@ def indexu():
     return redirect('/')
 
 
-@app.route('/mouse_coords/<coords>')
-def indexmouse(coords):
-    print(coords)
+@app.route('/delta_plus')
+def indexdm():
+    global delta
+    d = 2 * (float(delta)) / 10
+    if float(delta) - d > 0:
+        delta = str(float(delta) - d)
+    return redirect('/')
+
+
+@app.route('/delta_minus')
+def indexdp():
+    global delta
+    d = 2 * (float(delta)) / 10
+    if float(delta) + d < 90:
+        delta = str(float(delta) + d)
+    return redirect('/')
+
+
+@app.route('/change_type')
+def indextype():
+    global view_type
+    if view_type == "map":
+        view_type = "sat,skl"
+    else:
+        view_type = "map"
     return redirect('/')
 
 
@@ -88,4 +111,5 @@ def except_hook(cls, exception, traceback):
 
 
 if __name__ == '__main__':
+    # db_session.global_init('db/Spiders.db')
     app.run(host="127.0.0.1", port=5000)
