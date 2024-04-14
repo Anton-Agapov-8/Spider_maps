@@ -9,10 +9,11 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'bober'
 x = '39.488892379812896'
 y = '52.52593551259488'
-delta = "0.02"
+delta_list = ['8', '4', '2', '1', '0.5', '0.25', '0.125', '0.0625', '0.03125', '0.015265', '0.0078125', '0.00390625', '0.001953125', '0.0009765625']
+delta_i = 0
+delta = delta_list[delta_i]
 view_type = "map"
-# points = [['39.488892379812896', '52.52593551259488', 'round']]
-points = []
+points = [['39.488892379812896', '52.52593551259488', 'round']]
 
 
 def coords_to_str(coords):
@@ -79,20 +80,23 @@ def indexu():
 
 
 @app.route('/delta_plus')
-def indexdm():
-    global delta
-    d = 2 * (float(delta)) / 10
-    if float(delta) - d > 0:
-        delta = str(float(delta) - d)
+def indexdp():
+    global delta, delta_list, delta_i
+    # print(delta_i, len(delta_list) - 1)
+    if delta_i < len(delta_list) - 1:
+        delta = delta_list[delta_i + 1]
+        delta_i += 1
     return redirect('/')
 
 
 @app.route('/delta_minus')
-def indexdp():
-    global delta
-    d = 2 * (float(delta)) / 10
-    if float(delta) + d < 90:
-        delta = str(float(delta) + d)
+def indexdm():
+    global delta, delta_list, delta_i
+    # print(delta_list[0])
+    # print(delta_i, len(delta_list) - 2)
+    if delta_i > 0:
+        delta = delta_list[delta_i - 1]
+        delta_i -= 1
     return redirect('/')
 
 
@@ -103,6 +107,23 @@ def indextype():
         view_type = "sat,skl"
     else:
         view_type = "map"
+    return redirect('/')
+
+
+@app.route('/mouse_coords/<coords>')
+def indexmouse(coords):
+    coords2 = list(map(int, coords.split('; ')))
+    k = float(delta)
+    center_x = 765
+    center_y = 335
+    x_koeff = (k / 10) / 18
+    y_koeff = (k / 10) / 30
+    # print(coords2)
+    # print(coords2, (coords2[0] - center_x), (coords2[1] - center_y), k, x_koeff, y_koeff)
+    coords2[0] = (coords2[0] - center_x) * x_koeff + float(x)
+    coords2[1] = (center_y - coords2[1]) * y_koeff + float(y)
+    points.append([str(coords2[0]), str(coords2[1]), 'round'])
+    # print(points)
     return redirect('/')
 
 

@@ -28,7 +28,13 @@
     </div>
     <div align="center">
         <a href="/ll_left" class="btn btn-warning"></a>
-        <img src={{image}}>
+        <button id="button"><img src={{image}}></button>
+        <script>
+          button.onclick = function(event) {
+            a = (event.pageX+'; '+event.pageY);
+            location.href = "/mouse_coords/"+a;
+          };
+        </script>
         <a href="/ll_right" class="btn btn-warning"></a>
     </div>
     <div align="center">
