@@ -22,7 +22,7 @@
 <!-- Begin page content -->
 <main role="main" class="container">
     <div align="center">
-        <a href="/delta_minus" class="btn btn-warning" >-</a>
+        <a href="/delta_minus" class="btn btn-warning">-</a>
         <a href="/ll_up" class="btn btn-warning"></a>
         <a href="/delta_plus" class="btn btn-warning">+</a>
     </div>
@@ -30,10 +30,10 @@
         <a href="/ll_left" class="btn btn-warning"></a>
         <button id="button"><img src={{image}}></button>
         <script>
-          button.onclick = function(event) {
-            a = (event.pageX+'; '+event.pageY);
-            location.href = "/mouse_coords/"+a;
-          };
+            button.onclick = function(event) {
+              a = (event.clientX+'; '+event.clientY);
+              location.href = "/mouse_coords/"+a;
+            };
         </script>
         <a href="/ll_right" class="btn btn-warning"></a>
     </div>
@@ -41,7 +41,17 @@
         <a href="/ll_down" class="btn btn-warning"></a>
     </div>
     <div>
-    <a href="/change_type" class="btn btn-warning">🗺</a>
+        <a href="/change_type" class="btn btn-warning">🗺</a>
+    </div>
+    <div>
+        <h3>
+            Пауки на карте:
+        </h3>
+        <ul>
+            {% for item in spider_list %}
+                <li>{{ item }}</li>
+            {% endfor %}
+        </ul>
     </div>
 </main>
 </body>
