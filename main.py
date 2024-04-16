@@ -21,7 +21,7 @@ delta_list = ['8', '4', '2', '1', '0.5', '0.25', '0.125', '0.0625', '0.03125', '
 delta_i = 0
 delta = delta_list[delta_i]
 view_type = "map"
-points = [['39.488892379812896', '52.52593551259488', 'round']]
+points = [] # [['39.488892379812896', '52.52593551259488', 'round']]
 db_session.global_init('db/Spiders.db')
 db_sess = db_session.create_session()
 spiders = db_sess.query(Spiders).all()
