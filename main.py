@@ -1,8 +1,16 @@
 import sys
+from colorsys import hsv_to_rgb
 
 from flask import Flask, render_template, redirect
 from data import db_session
 from data.Spiders import Spiders
+
+
+def coords_to_str(coords):
+    # coords.sort(key=lambda x: x[0]*x[1])
+    coords.append(coords[0])
+    return ','.join(map(lambda x: ','.join(map(str, x)), coords))
+
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'bober'
@@ -13,41 +21,46 @@ delta_list = ['8', '4', '2', '1', '0.5', '0.25', '0.125', '0.0625', '0.03125', '
 delta_i = 0
 delta = delta_list[delta_i]
 view_type = "map"
-# points = [['39.488892379812896', '52.52593551259488', 'round']]
+points = [['39.488892379812896', '52.52593551259488', 'round']]
 db_session.global_init('db/Spiders.db')
 db_sess = db_session.create_session()
-spider = db_sess.query(Spiders).all()
-points = list(map(lambda x: x.split('/'), list(spider[0].points.split('|'))))
+spiders = db_sess.query(Spiders).all()
+# print(spiders)
+# print([el for el in spiders])
+# print([[el2 for el2 in el.points.split('|')] for el in spiders])
+spider_list = [[list(map(float, el2.split('/'))) for el2 in el.points.split('|')] for el in spiders]
+spider_list_str = [coords_to_str(el) for el in spider_list]
+color_list = [c for c in range(0, 360, 360 // len(spider_list_str))]
+color_list2 = []
+for i in range(len(color_list)):
+    color_list2.append(''.join(list(map(lambda x: hex(int(x * 255))[2:] + '0' * (2 - len(hex(int(x * 255))[2:])),
+                                        hsv_to_rgb(color_list[i] / 360, 1, 1)))))
+print(spider_list, spider_list_str, color_list2, sep='\n')
 db_sess.close()
-
-
-def coords_to_str(coords):
-    coords.sort()
-    coords.append(coords[0])
-    return ','.join(map(lambda x: ','.join(map(str, x)), coords))
+spider_index = 0
 
 
 @app.route('/', methods=['POST', 'GET'])
 def main():
-    global x, y, delta, view_type, spider
-    print(points)
-    # points_coords = [(39, 53), (40, 55), (38, 53), (37, 54), (35, 54.5)]
-    # points_coords_str = coords_to_str(points_coords)
-    # point_color = "FF1000FF"
-    # point_color2 = "FF100088"
-    # w_line = 2
+    global x, y, delta, view_type, spider_index, spider_list_str
+    # print(points)
+    point_color = color_list2[spider_index] + 'ff'
+    point_color2 = color_list2[spider_index] + '88'
+    w_line = 2
+    print(spider_list_str[spider_index])
     map_params = {
         "ll": ",".join([str(x), str(y)]),
         "spn": ",".join([str(delta), str(delta)]),
         "size": "450,450",
         "l": view_type,
-        # "pl": f"c:{point_color},f:{point_color2},w:{w_line},{points_coords_str}",
+        "pl": f"c:{point_color},f:{point_color2},w:{w_line},{spider_list_str[spider_index]}",
         'pt': '~'.join(map(lambda x: ','.join(map(str, x)), points))
     }
     map_api_server = "http://static-maps.yandex.ru/1.x/"
     # print('|'.join(map(lambda x: '/'.join(x), points)))
     return render_template("main.html",
-                           image=f'http://static-maps.yandex.ru/1.x/?ll={map_params["ll"]}&spn={map_params["spn"]}&size={map_params["size"]}&l={map_params["l"]}&pt={map_params["pt"]}', spider_list=[el.name for el in spider])
+                           image=f'http://static-maps.yandex.ru/1.x/?ll={map_params["ll"]}&spn={map_params["spn"]}&size={map_params["size"]}&l={map_params["l"]}&pl={map_params["pl"]}&pt={map_params["pt"]}',
+                           spider_list=[el.name for el in spiders], colors=color_list2)
 
 
 @app.route('/ll_right')
@@ -123,10 +136,19 @@ def indexmouse(coords):
     center_y = 335
     x_koeff = (k / 10) / 18
     y_koeff = (k / 10) / 30
-    print(coords2)
+    # print(coords2)
     coords2[0] = (coords2[0] - center_x) * x_koeff + float(x)
     coords2[1] = (center_y - coords2[1]) * y_koeff + float(y)
-    points.append([str(coords2[0]), str(coords2[1]), 'round'])
+    points.append([str(coords2[0]), str(coords2[1])])
+    return redirect('/')
+
+
+@app.route('/change_spider/<index>')
+def change_spider(index):
+    global spider_index
+    print(spider_index, end='|')
+    spider_index = int(index) - 1
+    print(spider_index)
     return redirect('/')
 
 
@@ -134,16 +156,19 @@ def except_hook(cls, exception, traceback):
     sys.__excepthook__(cls, exception, traceback)
 
 
+def create_spider(name, points):
+    db_session.global_init('db/Spiders.db')
+    db_sess = db_session.create_session()
+    spider = Spiders()
+    spider.name = name
+    spider.points = points
+    db_sess.commit()
+    db_sess.close()
+
+
 if __name__ == '__main__':
-    # db_session.global_init('db/Spiders.db')
-    # db_sess = db_session.create_session()
-    # spider = Spiders()
-    # spider.name = 'крестовик'
-    # spider.points = '39.488892379812896/52.52593551259488/round|39.330559046479564/52.54593551259488/round|39.330559046479564/52.63760217926154/round|39.452781268701784/52.68260217926154/round|39.58333682425734/52.68426884592821/round|39.70833682425734/52.66926884592821/round|39.78055904647956/52.56760217926154/round|39.7138923798129/52.48426884592821/round|39.552781268701786/52.45760217926154/round|39.41667015759067/52.444268845928214/round|39.330559046479564/52.48260217926154/round'
-    # spider.name = 'крестовик2'
-    # spider.points = '39.488892379812896/52.52593551259488/round|39.330559046479564/52.54593551259488/round|39.330559046479564/52.63760217926154/round|39.452781268701784/52.68260217926154/round|39.58333682425734/52.68426884592821/round|39.70833682425734/52.66926884592821/round|39.78055904647956/52.56760217926154/round|39.7138923798129/52.48426884592821/round|39.552781268701786/52.45760217926154/round|39.41667015759067/52.444268845928214/round|39.330559046479564/52.48260217926154/round'
-    #
-    # db_sess.add(spider)
-    # db_sess.commit()
-    # db_sess.close()
+    create_spider('крестовик',
+                  '39.327781268701784/52.51593551259488|39.33333682425734/52.605935512594876|39.41944793536845/52.687602179261546|39.547225713146226/52.70260217926155|39.65833682425734/52.69926884592821|39.74722571314623/52.639268845928214|39.75278126870178/52.58593551259488|39.72222571314623/52.51093551259488|39.644447935368454/52.45426884592821|39.57222571314623/52.435935512594874|39.44722571314623/52.440935512594876|39.38055904647956/52.46760217926155')
+    create_spider('крестовик2',
+                  '39.580559046479564/52.61093551259488|39.513892379812894/52.660935512594875|39.516670157590674/52.76093551259488|39.641670157590674/52.82760217926155|39.81111460203512/52.810935512594874|39.922225713146226/52.74093551259488|39.83611460203512/52.64760217926155|39.736114602035116/52.61426884592821|39.68333682425734/52.60926884592821')
     app.run(host="127.0.0.1", port=5000)

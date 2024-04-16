@@ -28,12 +28,14 @@
     </div>
     <div align="center">
         <a href="/ll_left" class="btn btn-warning"></a>
-        <button id="button"><img src={{image}}></button>
+        <button id="map"><img src={{image}}></button>
         <script>
             button.onclick = function(event) {
               a = (event.clientX+'; '+event.clientY);
               location.href = "/mouse_coords/"+a;
             };
+
+
         </script>
         <a href="/ll_right" class="btn btn-warning"></a>
     </div>
@@ -49,7 +51,11 @@
         </h3>
         <ul>
             {% for item in spider_list %}
-                <li>{{ item }}</li>
+            <font color="{{ colors[loop.index - 1] }}">
+            <li>
+                <a href= "/change_spider/{{ loop.index }}">{{ item }}</a>
+            </li>
+            </font>
             {% endfor %}
         </ul>
     </div>

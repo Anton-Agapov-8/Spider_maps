@@ -12,5 +12,5 @@ class Spiders(SqlAlchemyBase):
     points = sqlalchemy.Column(sqlalchemy.String, nullable=True)
 
     def __repr__(self):
-        reslist = [self.id, self.picture, self.name]
-        return ';, '.join(map(str, reslist))
+        reslist = [self.id, self.name]
+        return '; '.join(map(str, reslist))
