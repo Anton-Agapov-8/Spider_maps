@@ -3,7 +3,10 @@ from colorsys import hsv_to_rgb
 
 from flask import Flask, render_template, redirect
 from data import db_session
+from data.AuthorizationForm import LoginForm
+from flask_login import LoginManager, login_user, login_required, logout_user
 from data.Spiders import Spiders
+from data.User import User
 
 
 def coords_to_str(coords):
@@ -14,6 +17,8 @@ def coords_to_str(coords):
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'bober'
+login_manager = LoginManager()
+login_manager.init_app(app)
 x = '39.488892379812896'
 y = '52.52593551259488'
 delta_list = ['8', '4', '2', '1', '0.5', '0.25', '0.125', '0.0625', '0.03125', '0.015265', '0.0078125', '0.00390625',
@@ -21,7 +26,7 @@ delta_list = ['8', '4', '2', '1', '0.5', '0.25', '0.125', '0.0625', '0.03125', '
 delta_i = 0
 delta = delta_list[delta_i]
 view_type = "map"
-points = [] # [['39.488892379812896', '52.52593551259488', 'round']]
+points = []  # [['39.488892379812896', '52.52593551259488', 'round']]
 db_session.global_init('db/Spiders.db')
 db_sess = db_session.create_session()
 spiders = db_sess.query(Spiders).all()
@@ -152,6 +157,55 @@ def change_spider(index):
     return redirect('/')
 
 
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect("/")
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    db_sess = db_session.create_session()
+    return db_sess.query(User).get(user_id)
+
+
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    form = LoginForm()
+    if form.validate_on_submit():
+        db_session.global_init('db/Users.db')
+        db_sess2 = db_session.create_session()
+        if db_sess2.query(User).filter(User.name == form.name.data).first():
+            return render_template('register.html', message="Такой пользователь уже есть",
+                                   title='Регистрация', form=form)
+        user = User()
+        user.name = form.name.data
+        user.set_password(form.password.data)
+        db_sess2.add(user)
+        db_sess2.commit()
+        return redirect('/login')
+    return render_template('register.html', title='Регистрация', form=form)
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+    if form.validate_on_submit():
+        db_session.global_init('db/Users.db')
+        db_sess2 = db_session.create_session()
+        user = db_sess2.query(User).filter(User.name == form.name.data).first()
+        print(user, user.check_password(form.password.data))
+        if user and user.check_password(form.password.data):
+            login_user(user, remember=form.remember_me.data)
+            db_sess2.close()
+            return redirect("/")
+        return render_template('login.html',
+                               message="Неправильный логин или пароль",
+                               form=form)
+    return render_template('login.html', title='Авторизация', form=form)
+
+
 def except_hook(cls, exception, traceback):
     sys.__excepthook__(cls, exception, traceback)
 
@@ -166,9 +220,19 @@ def create_spider(name, points):
     db_sess.close()
 
 
+def create_user(name, password):
+    db_session.global_init('db/Users.db')
+    db_sess = db_session.create_session()
+    user = User()
+    user.name = name
+    user.password = password
+    db_sess.commit()
+    db_sess.close()
+
+
 if __name__ == '__main__':
-    create_spider('крестовик',
-                  '39.327781268701784/52.51593551259488|39.33333682425734/52.605935512594876|39.41944793536845/52.687602179261546|39.547225713146226/52.70260217926155|39.65833682425734/52.69926884592821|39.74722571314623/52.639268845928214|39.75278126870178/52.58593551259488|39.72222571314623/52.51093551259488|39.644447935368454/52.45426884592821|39.57222571314623/52.435935512594874|39.44722571314623/52.440935512594876|39.38055904647956/52.46760217926155')
-    create_spider('крестовик2',
-                  '39.580559046479564/52.61093551259488|39.513892379812894/52.660935512594875|39.516670157590674/52.76093551259488|39.641670157590674/52.82760217926155|39.81111460203512/52.810935512594874|39.922225713146226/52.74093551259488|39.83611460203512/52.64760217926155|39.736114602035116/52.61426884592821|39.68333682425734/52.60926884592821')
+    # create_spider('крестовик',
+    #               '39.327781268701784/52.51593551259488|39.33333682425734/52.605935512594876|39.41944793536845/52.687602179261546|39.547225713146226/52.70260217926155|39.65833682425734/52.69926884592821|39.74722571314623/52.639268845928214|39.75278126870178/52.58593551259488|39.72222571314623/52.51093551259488|39.644447935368454/52.45426884592821|39.57222571314623/52.435935512594874|39.44722571314623/52.440935512594876|39.38055904647956/52.46760217926155')
+    # create_spider('крестовик2',
+    #               '39.580559046479564/52.61093551259488|39.513892379812894/52.660935512594875|39.516670157590674/52.76093551259488|39.641670157590674/52.82760217926155|39.81111460203512/52.810935512594874|39.922225713146226/52.74093551259488|39.83611460203512/52.64760217926155|39.736114602035116/52.61426884592821|39.68333682425734/52.60926884592821')
     app.run(host="127.0.0.1", port=5000)
