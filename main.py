@@ -286,7 +286,7 @@ def points_done():
 def points_delete():
     global points_making
     points_making = []
-    return redirect('/points')
+    return redirect('/points2')
 
 
 def except_hook(cls, exception, traceback):
