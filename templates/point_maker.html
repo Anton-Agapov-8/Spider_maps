@@ -10,7 +10,14 @@
     </div>
     <div align="center">
         <a href="/ll_left" class="btn btn-warning"></a>
-        <img src={{image}}>
+        <button id="button"><img src={{image}}></button>
+        <script>
+            button.onclick = function(event) {
+              a = (event.clientX+'; '+event.clientY);
+              location.href = "/mouse_coords/"+a;
+            };
+
+        </script>
         <a href="/ll_right" class="btn btn-warning"></a>
     </div>
     <div align="center">
@@ -18,23 +25,13 @@
     </div>
     <div>
         <a href="/change_type" class="btn btn-warning">🗺</a>
-        {% if current_user.is_authenticated %}
-        <a href="/points" class="btn btn-secondary">Поставить точку на карте</a>
-        {% endif %}
+        <a href="/points_done" class="btn btn-success">Подтвердить точки</a>
+        <a href="/points_delete" class="btn btn-danger">Удалить точки</a>
     </div>
     <div>
         <h3>
-            Пауки на карте:
+            Паук на карте: {{ spider }}
         </h3>
-        <ul>
-            {% for item in spider_list %}
-            <font color="{{ colors[loop.index - 1] }}">
-                <li>
-                    <a href="/change_spider/{{ loop.index }}">{{ item }}</a>
-                </li>
-            </font>
-            {% endfor %}
-        </ul>
     </div>
 </main>
 {% endblock %}

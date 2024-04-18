@@ -4,9 +4,10 @@ from colorsys import hsv_to_rgb
 from flask import Flask, render_template, redirect
 from data import db_session
 from data.AuthorizationForm import LoginForm
-from flask_login import LoginManager, login_user, login_required, logout_user
+from flask_login import LoginManager, login_user, login_required, logout_user, current_user
 from data.Spiders import Spiders
 from data.User import User
+from data.SpiderFormUpdate import SpiderFormUpdate
 
 
 def coords_to_str(coords):
@@ -27,6 +28,7 @@ delta_i = 0
 delta = delta_list[delta_i]
 view_type = "map"
 points = []  # [['39.488892379812896', '52.52593551259488', 'round']]
+points_making = []
 db_session.global_init('db/Spiders.db')
 db_sess = db_session.create_session()
 spiders = db_sess.query(Spiders).all()
@@ -43,6 +45,8 @@ for i in range(len(color_list)):
 print(spider_list, spider_list_str, color_list2, sep='\n')
 db_sess.close()
 spider_index = 0
+making_points = False
+point_spider_name = ''
 
 
 @app.route('/', methods=['POST', 'GET'])
@@ -74,6 +78,8 @@ def indexl():
     d = 2 * (float(delta)) / 10
     if float(x) + d < 180:
         x = str(float(x) + d)
+    if making_points:
+        return redirect('/points2')
     return redirect('/')
 
 
@@ -83,6 +89,8 @@ def indexr():
     d = 2 * (float(delta)) / 10
     if float(x) - d > -180:
         x = str(float(x) - d)
+    if making_points:
+        return redirect('/points2')
     return redirect('/')
 
 
@@ -92,6 +100,8 @@ def indexd():
     d = 2 * (float(delta)) / 10
     if float(y) - d > -90:
         y = str(float(y) - d)
+    if making_points:
+        return redirect('/points2')
     return redirect('/')
 
 
@@ -101,6 +111,8 @@ def indexu():
     d = 2 * (float(delta)) / 10
     if float(y) + d < 90:
         y = str(float(y) + d)
+    if making_points:
+        return redirect('/points2')
     return redirect('/')
 
 
@@ -111,6 +123,8 @@ def indexdp():
     if delta_i < len(delta_list) - 1:
         delta = delta_list[delta_i + 1]
         delta_i += 1
+    if making_points:
+        return redirect('/points2')
     return redirect('/')
 
 
@@ -120,6 +134,8 @@ def indexdm():
     if delta_i > 0:
         delta = delta_list[delta_i - 1]
         delta_i -= 1
+    if making_points:
+        return redirect('/points2')
     return redirect('/')
 
 
@@ -130,30 +146,32 @@ def indextype():
         view_type = "sat,skl"
     else:
         view_type = "map"
+    if making_points:
+        return redirect('/points2')
     return redirect('/')
 
 
 @app.route('/mouse_coords/<coords>')
 def indexmouse(coords):
-    coords2 = list(map(int, coords.split('; ')))
-    k = float(delta)
-    center_x = 765
-    center_y = 335
-    x_koeff = (k / 10) / 18
-    y_koeff = (k / 10) / 30
-    # print(coords2)
-    coords2[0] = (coords2[0] - center_x) * x_koeff + float(x)
-    coords2[1] = (center_y - coords2[1]) * y_koeff + float(y)
-    points.append([str(coords2[0]), str(coords2[1])])
-    return redirect('/')
+    if current_user.is_authenticated:
+        coords2 = list(map(int, coords.split('; ')))
+        k = float(delta)
+        center_x = 765
+        center_y = 335
+        x_koeff = (k / 10) / 18
+        y_koeff = (k / 10) / 30
+        coords2[0] = (coords2[0] - center_x) * x_koeff + float(x)
+        coords2[1] = (center_y - coords2[1]) * y_koeff + float(y)
+        points_making.append([str(coords2[0]), str(coords2[1])])
+    return redirect('/points2')
 
 
 @app.route('/change_spider/<index>')
 def change_spider(index):
     global spider_index
-    print(spider_index, end='|')
+    # print(spider_index, end='|')
     spider_index = int(index) - 1
-    print(spider_index)
+    # print(spider_index)
     return redirect('/')
 
 
@@ -176,7 +194,7 @@ def register():
     if form.validate_on_submit():
         db_session.global_init('db/Users.db')
         db_sess2 = db_session.create_session()
-        if db_sess2.query(User).filter(User.name == form.name.data).first():
+        if db_sess2.query(User).filter(User.name == str(form.name.data)).first():
             return render_template('register.html', message="Такой пользователь уже есть",
                                    title='Регистрация', form=form)
         user = User()
@@ -194,8 +212,8 @@ def login():
     if form.validate_on_submit():
         db_session.global_init('db/Users.db')
         db_sess2 = db_session.create_session()
-        user = db_sess2.query(User).filter(User.name == form.name.data).first()
-        print(user, user.check_password(form.password.data))
+        user = db_sess2.query(User).filter(User.name == str(form.name.data)).first()
+        # print(user, user.check_password(form.password.data))
         if user and user.check_password(form.password.data):
             login_user(user, remember=form.remember_me.data)
             db_sess2.close()
@@ -204,6 +222,71 @@ def login():
                                message="Неправильный логин или пароль",
                                form=form)
     return render_template('login.html', title='Авторизация', form=form)
+
+
+@app.route('/points')
+def spider_add_or_update():
+    return render_template('AddOrUpdate.html', title='Выбор')
+
+
+@app.route('/willadd', methods=['GET', 'POST'])
+def addForm():
+    pass
+
+
+@app.route('/willupdate', methods=['GET', 'POST'])
+def updateForm():
+    form = SpiderFormUpdate()
+    if form.validate_on_submit():
+        db_session.global_init('db/Spiders.db')
+        db_sess3 = db_session.create_session()
+        spider = db_sess3.query(Spiders).filter(Spiders.name == str(form.name.data)).first()
+        if spider:
+            global point_spider_name
+            point_spider_name = spider.name
+            return redirect(f'/points2')
+        return render_template('UpdateSpider.html', message="Такого паука нет", form=form)
+    return render_template('UpdateSpider.html', form=form)
+
+
+@app.route('/points2')
+def indexpoint():
+    global x, y, delta, view_type, spider_index, spider_list_str, making_points, point_spider_name
+    making_points = True
+    db_session.global_init('db/Spiders.db')
+    db_sess3 = db_session.create_session()
+    spider = db_sess3.query(Spiders).filter(Spiders.name == point_spider_name).first()
+    db_sess3.close()
+    point_color = color_list2[int(spider.id) - 1] + 'ff'
+    point_color2 = color_list2[int(spider.id) - 1] + '88'
+    w_line = 2
+    map_params = {
+        "ll": ",".join([str(x), str(y)]),
+        "spn": ",".join([str(delta), str(delta)]),
+        "size": "450,450",
+        "l": view_type,
+        "pl": f"c:{point_color},f:{point_color2},w:{w_line},{spider_list_str[int(spider.id) - 1]}",
+        'pt': '~'.join(map(lambda x: ','.join(map(str, x)), points_making))
+    }
+    return render_template('point_maker.html', title='Выбор точек',
+                           image=f'http://static-maps.yandex.ru/1.x/?ll={map_params["ll"]}&spn={map_params["spn"]}&size={map_params["size"]}&l={map_params["l"]}&pl={map_params["pl"]}&pt={map_params["pt"]}',
+                           )
+
+
+@app.route('/points_done')
+def points_done():
+    global making_points, points_making
+    points.extend(points_making)
+    points_making = []
+    making_points = False
+    return redirect('/')
+
+
+@app.route('/points_delete')
+def points_delete():
+    global points_making
+    points_making = []
+    return redirect('/points')
 
 
 def except_hook(cls, exception, traceback):
