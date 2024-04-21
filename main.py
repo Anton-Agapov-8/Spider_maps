@@ -42,28 +42,61 @@ color_list2 = []
 for i in range(len(color_list)):
     color_list2.append(''.join(list(map(lambda x: hex(int(x * 255))[2:] + '0' * (2 - len(hex(int(x * 255))[2:])),
                                         hsv_to_rgb(color_list[i] / 360, 1, 1)))))
-print(spider_list, spider_list_str, color_list2, sep='\n')
+# print(spider_list, spider_list_str, color_list2, sep='\n')
 db_sess.close()
 spider_index = 0
 making_points = False
 point_spider_name = ''
+
+point_colors = {
+    '|'.join(map(str, list(range(0, 13)) + list(range(330, 360)))): 'rd',
+    '|'.join(map(str, list(range(13, 33)))): 'do',
+    '|'.join(map(str, list(range(33, 48)))): 'or',
+    '|'.join(map(str, list(range(48, 80)))): 'yw',
+    '|'.join(map(str, list(range(80, 153)))): 'gn',
+    '|'.join(map(str, list(range(153, 208)))): 'lb',
+    '|'.join(map(str, list(range(208, 241)))): 'bl',
+    '|'.join(map(str, list(range(241, 290)))): 'vv',
+    '|'.join(map(str, list(range(290, 330)))): 'pn',
+}
 
 
 @app.route('/', methods=['POST', 'GET'])
 def main():
     global x, y, delta, view_type, spider_index, spider_list_str
     # print(points)
-    point_color = color_list2[spider_index] + 'ff'
-    point_color2 = color_list2[spider_index] + '88'
+    area_color = color_list2[spider_index] + 'ff'
+    area_color2 = color_list2[spider_index] + '88'
     w_line = 2
-    print(spider_list_str[spider_index])
+    # print(spider_list_str[spider_index])
+    point_color = 'rd'
+    for key in point_colors:
+        pc = color_list[spider_index]
+        if str(pc) in list(key.split('|')):
+            point_color = point_colors[key]
+    db_session.global_init('db/Spiders.db')
+    db_sess2 = db_session.create_session()
+    current_spider = db_sess2.query(Spiders).filter(Spiders.id == spider_index + 1).first()
+    print(current_spider, spider_index + 1)
+    current_spider_points = []
+    if current_spider:
+        if current_spider.points_unchecked:
+            current_spider_points = [list(map(float, el2.split('/'))) for el2 in
+                                     current_spider.points_unchecked.split('|')]
+    if current_spider_points is None:
+        current_spider_points = []
+    w_line = 2
+    s = ''
+    if current_spider_points:
+        s = f'pm{point_color}s'
     map_params = {
         "ll": ",".join([str(x), str(y)]),
         "spn": ",".join([str(delta), str(delta)]),
         "size": "450,450",
         "l": view_type,
-        "pl": f"c:{point_color},f:{point_color2},w:{w_line},{spider_list_str[spider_index]}",
-        'pt': '~'.join(map(lambda x: ','.join(map(str, x)), points))
+        "pl": f"c:{area_color},f:{area_color2},w:{w_line},{spider_list_str[int(spider_index)]}",
+        'pt': '~'.join(
+            map(lambda x: ','.join(map(str, x)), [[*el, s] for el in current_spider_points]))
     }
     map_api_server = "http://static-maps.yandex.ru/1.x/"
     # print('|'.join(map(lambda x: '/'.join(x), points)))
@@ -237,47 +270,72 @@ def addForm():
 @app.route('/willupdate', methods=['GET', 'POST'])
 def updateForm():
     form = SpiderFormUpdate()
+    db_session.global_init('db/Spiders.db')
+    db_sess3 = db_session.create_session()
+    print(db_sess3.query(Spiders).all())
+    spider_list = [el.name for el in db_sess3.query(Spiders).all()]
     if form.validate_on_submit():
-        db_session.global_init('db/Spiders.db')
-        db_sess3 = db_session.create_session()
         spider = db_sess3.query(Spiders).filter(Spiders.name == str(form.name.data)).first()
         if spider:
             global point_spider_name
             point_spider_name = spider.name
             return redirect(f'/points2')
-        return render_template('UpdateSpider.html', message="Такого паука нет", form=form)
-    return render_template('UpdateSpider.html', form=form)
+        return render_template('UpdateSpider.html', message="Такого паука нет", form=form, spider_list=spider_list)
+    return render_template('UpdateSpider.html', form=form, spider_list=spider_list)
 
 
 @app.route('/points2')
 def indexpoint():
-    global x, y, delta, view_type, spider_index, spider_list_str, making_points, point_spider_name
+    global x, y, delta, view_type, spider_index, spider_list_str, making_points, point_spider_name, points_making
     making_points = True
     db_session.global_init('db/Spiders.db')
     db_sess3 = db_session.create_session()
     spider = db_sess3.query(Spiders).filter(Spiders.name == point_spider_name).first()
     db_sess3.close()
-    point_color = color_list2[int(spider.id) - 1] + 'ff'
-    point_color2 = color_list2[int(spider.id) - 1] + '88'
+    area_color = color_list2[int(spider.id) - 1] + 'ff'
+    area_color2 = color_list2[int(spider.id) - 1] + '88'
+    point_color = 'rd'
+    for key in point_colors:
+        pc = color_list[int(spider.id) - 1]
+        if str(pc) in list(key.split('|')):
+            point_color = point_colors[key]
     w_line = 2
+    s = ''
+    if points_making:
+        s = f'pm{point_color}s'
+    # print(points_making, end=' | ')
+    # print(points_making)
     map_params = {
         "ll": ",".join([str(x), str(y)]),
         "spn": ",".join([str(delta), str(delta)]),
         "size": "450,450",
         "l": view_type,
-        "pl": f"c:{point_color},f:{point_color2},w:{w_line},{spider_list_str[int(spider.id) - 1]}",
-        'pt': '~'.join(map(lambda x: ','.join(map(str, x)), points_making))
+        "pl": f"c:{area_color},f:{area_color2},w:{w_line},{spider_list_str[int(spider.id) - 1]}",
+        'pt': '~'.join(
+            map(lambda x: ','.join(map(str, x)), [[*el, s] for el in points_making]))
     }
+    # print(map_params['pt'])
     return render_template('point_maker.html', title='Выбор точек',
                            image=f'http://static-maps.yandex.ru/1.x/?ll={map_params["ll"]}&spn={map_params["spn"]}&size={map_params["size"]}&l={map_params["l"]}&pl={map_params["pl"]}&pt={map_params["pt"]}',
+                           spider=spider.name
                            )
 
 
-@app.route('/points_done')
-def points_done():
+@app.route('/points_done/<spider_name>')
+def points_done(spider_name):
     global making_points, points_making
-    points.extend(points_making)
-    points_making = []
+    if points_making:
+        db_session.global_init('db/Spiders.db')
+        db_sess = db_session.create_session()
+        spider = db_sess.query(Spiders).filter(Spiders.name == str(spider_name)).first()
+        # print(spider.points_unchecked)
+        if spider.points_unchecked:
+            spider.points_unchecked = spider.points_unchecked + '|' + '|'.join(map(lambda x: '/'.join(x), points_making))
+            # print(spider.points_unchecked)
+        else:
+            spider.points_unchecked = '|'.join(map(lambda x: '/'.join(x), points_making))
+        db_sess.commit()
+        points_making = []
     making_points = False
     return redirect('/')
 

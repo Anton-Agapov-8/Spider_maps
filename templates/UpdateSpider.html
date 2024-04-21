@@ -15,5 +15,15 @@
         </p>
         <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
         <div>{{ message }}</div>
+        <h3>
+            Пауки находящиеся в базе данных:
+        </h3>
+        <ul>
+            {% for item in spider_list %}
+            <li>
+                {{ item }}
+            </li>
+            {% endfor %}
+        </ul>
     </form>
 {% endblock %}
