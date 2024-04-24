@@ -16,17 +16,18 @@
               a = (event.clientX+'; '+event.clientY);
               location.href = "/mouse_coords/"+a;
             };
-
         </script>
         <a href="/ll_right" class="btn btn-warning"></a>
     </div>
     <div align="center">
         <a href="/ll_down" class="btn btn-warning"></a>
     </div>
+    <br>
     <div>
         <a href="/change_type" class="btn btn-warning">🗺</a>
         <a href="/points_done/{{ spider }}" class="btn btn-success">Подтвердить точки</a>
         <a href="/points_delete" class="btn btn-danger">Удалить точки</a>
+        <a href="/change_mouse" class="btn btn-warning">{{ button_desc }}</a>
     </div>
     <div>
         <h3>

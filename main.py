@@ -40,6 +40,7 @@ spider_list_str = []
 color_list = []
 color_list2 = []
 spider_list = []
+deletor_activated = False
 
 
 def count_colors():
@@ -222,7 +223,23 @@ def indexmouse(coords):
         y_koeff = (k / 10) / 30
         coords2[0] = (coords2[0] - center_x) * x_koeff + float(x)
         coords2[1] = (center_y - coords2[1]) * y_koeff + float(y)
-        points_making.append([str(coords2[0]), str(coords2[1])])
+        if not deletor_activated:
+            points_making.append([str(coords2[0]), str(coords2[1])])
+        else:
+            dist_list = []
+            for i in range(len(points_making)):
+                dist_list.append([((float(points_making[i][0]) - coords2[0]) ** 2 + (
+                        float(points_making[i][1]) - coords2[1]) ** 2) ** 0.5, i])
+            if dist_list:
+                min_dist = dist_list[0][0]
+                min_ind = 0
+                for el in dist_list:
+                    if el[0] < min_dist:
+                        min_dist = el[0]
+                        min_ind = el[1]
+                if (((float(points_making[min_ind][0]) - coords2[0]) / x_koeff) ** 2 + (
+                        (float(points_making[min_ind][1]) - coords2[1]) / y_koeff) ** 2) ** 0.5 < 30:
+                    points_making.pop(min_ind)
     return redirect('/points2')
 
 
@@ -372,7 +389,11 @@ def indexpoint():
         img = f'http://static-maps.yandex.ru/1.x/?ll={map_params["ll"]}&spn={map_params["spn"]}&size={map_params["size"]}&l={map_params["l"]}&pt={map_params["pt"]}'
     # print(spider_list_str, map_params['pl'], map_params['pt'], spider.id)
     # print(map_params['pt'])
-    return render_template('point_maker.html', title='Выбор точек', image=img, spider=spider.name)
+    if deletor_activated:
+        return render_template('point_maker.html', title='Выбор точек', image=img, spider=spider.name,
+                               button_desc='Расстановка точек')
+    return render_template('point_maker.html', title='Выбор точек', image=img, spider=spider.name,
+                           button_desc='Удаление точкек по одной')
 
 
 @app.route('/points_done/<spider_name>')
@@ -399,6 +420,16 @@ def points_done(spider_name):
 def points_delete():
     global points_making
     points_making = []
+    return redirect('/points2')
+
+
+@app.route('/change_mouse')
+def change_mouse():
+    global deletor_activated
+    if deletor_activated:
+        deletor_activated = False
+    else:
+        deletor_activated = True
     return redirect('/points2')
 
 
