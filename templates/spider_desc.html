@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<main role="main" class="container">
+    <p align="center"><img class="fit-picture" src="{{ spider_inf[5] }}"></p>
+    <table align="center" cellspacing="30" border="3">
+        <tr>
+            <th>
+                <h4>Характеристики</h4>
+            </th>
+            <th>
+                <h4>Данные о пауке</h4>
+            </th>
+        </tr>
+        {% for item in spider_inf %}
+        {% if loop.index < 5 %}
+        <tr>
+        <td bgcolor="CCCCCC" >
+            <h4>{{ item[0] }}</h4>
+        </td>
+        <td bgcolor="CCCCCC">
+            <h4>{{  item[1] }}</h4>
+        </td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+    </table>
+</main>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<main role="main" class="container">
+    <table align="center" cellspacing="30" border="3">
+        <tr>
+            <th>
+                Изображение
+            </th>
+            <th>
+                Название паука
+            </th>
+        </tr>
+        {% for item in spider_list %}
+        <tr>
+        <td bgcolor="CCCCCC" align="center" valign="middle">
+            <p><img class="fit-picture" src="{{ item[5] }}"></p>
+        </td>
+        <td bgcolor="CCCCCC">
+            <a href="/spider_description/{{ item[0] }}"><h4>{{  item[0] }}</h4></a>
+        </td>
+        </tr>
+        {% endfor %}
+    </table>
+</main>
+{% endblock %}

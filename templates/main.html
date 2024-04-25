@@ -16,10 +16,15 @@
     <div align="center">
         <a href="/ll_down" class="btn btn-warning"></a>
     </div>
+    <br>
     <div>
         <a href="/change_type" class="btn btn-warning">🗺</a>
         {% if current_user.is_authenticated %}
         <a href="/points" class="btn btn-secondary">Поставить точки на карте</a>
+        <a href="/library" class="btn btn-primary">Перейти к библиотеке пауков</a>
+        {% if current_user.name == "Admin" %}
+        <a href="/points_check" class="btn btn-primary">Подтвердить точки</a>
+        {% endif %}
         {% endif %}
     </div>
     <div>
