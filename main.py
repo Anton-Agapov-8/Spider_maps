@@ -276,7 +276,7 @@ def load_user(user_id):
 def register():
     form = LoginForm()
     if form.validate_on_submit():
-        db_session.global_init('db/Users.db')
+        db_session.global_init('db/Spiders.db')
         db_sess2 = db_session.create_session()
         if db_sess2.query(User).filter(User.name == str(form.name.data)).first():
             return render_template('register.html', message="Такой пользователь уже есть",
@@ -294,7 +294,7 @@ def register():
 def login():
     form = LoginForm()
     if form.validate_on_submit():
-        db_session.global_init('db/Users.db')
+        db_session.global_init('db/Spiders.db')
         db_sess2 = db_session.create_session()
         user = db_sess2.query(User).filter(User.name == str(form.name.data)).first()
         # print(user, user.check_password(form.password.data))
@@ -575,7 +575,7 @@ def create_spider_description(name, size, color, type, time, picture='spider_wit
 
 
 def create_user(name, password):
-    db_session.global_init('db/Users.db')
+    db_session.global_init('db/Spiders.db')
     db_sess = db_session.create_session()
     user = User()
     user.name = name
